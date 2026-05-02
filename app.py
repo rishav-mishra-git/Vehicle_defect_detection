@@ -15,8 +15,9 @@ CLASSES = ["Dent", "Scratch", "Major Damage"]
 # ===============================
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model(MODEL_PATH)
-    return model
+    interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    interpreter.allocate_tensors()
+    return interpreter
 
 model = load_model()
 
