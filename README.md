@@ -151,15 +151,3 @@ http://localhost:8501
 **Rishav**
 CSE (AI/ML) Student
 Haldia Institute of Technology
-
----
-
-## 📄 License
-
-This project is for educational and research purposes.
-
----
-
-## ⭐ Support
-
-If you like this project, give it a ⭐ on GitHub!
