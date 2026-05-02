@@ -1,12 +1,12 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
-import tflite_runtime.interpreter as tflite
+import tensorflow as tf
 
 # ===============================
 # CONFIG
 # ===============================
-MODEL_PATH = "model.tflite"
+MODEL_PATH = "model.h5"
 IMG_SIZE = (224, 224)
 CLASSES = ["Dent", "Scratch", "Major Damage"]
 
@@ -15,13 +15,10 @@ CLASSES = ["Dent", "Scratch", "Major Damage"]
 # ===============================
 @st.cache_resource
 def load_model():
-    interpreter = tflite.Interpreter(model_path=MODEL_PATH)
-    interpreter.allocate_tensors()
-    return interpreter
+    model = tf.keras.models.load_model(MODEL_PATH)
+    return model
 
-interpreter = load_model()
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
+model = load_model()
 
 # ===============================
 # PREPROCESS IMAGE
@@ -36,10 +33,8 @@ def preprocess_image(image):
 # PREDICT FUNCTION
 # ===============================
 def predict(img_array):
-    interpreter.set_tensor(input_details[0]['index'], img_array)
-    interpreter.invoke()
-    output = interpreter.get_tensor(output_details[0]['index'])
-    return output
+    predictions = model.predict(img_array)
+    return predictions
 
 # ===============================
 # DAMAGE LOGIC
