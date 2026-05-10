@@ -6,7 +6,7 @@ import io
 # =========================
 # ROBFLOW CONFIG
 # =========================
-API_KEY = "Ct01Fr4ZzSux9DURoieR"
+API_KEY = "9PU75Z9tiNgXhZlgx5cW"
 MODEL_URL = "https://detect.roboflow.com/vehicle-defect/5"
 
 # =========================
