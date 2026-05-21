@@ -7,7 +7,7 @@ Built using:
 
 🐍 Python
 🎯 Roboflow YOLOv11
-🌐 Streamlit
+🌐 Huggingface
 🖼️ Computer Vision
 ✨ Features
 
@@ -29,7 +29,7 @@ Results are displayed in a clean dashboard
 🛠️ Tech Stack
 Technology	Purpose
 Python	Backend Logic
-Streamlit	Web Application
+Huggingface	Web Application
 Roboflow	Model Training & API
 YOLOv11	Object Detection
 Pillow	Image Processing
