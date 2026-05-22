@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw
 
 API_KEY = "9PU75Z9tiNgXhZlgx5cW"
 
-MODEL_URL = "https://detect.roboflow.com/vehicle-defect/6"
+MODEL_URL = "https://detect.roboflow.com/car_dent_scratch_detection-1-mczqd/1"
 
 
 st.set_page_config(
