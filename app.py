@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 from PIL import Image, ImageDraw
-
+import pandas as pd
 
 API_KEY = "9PU75Z9tiNgXhZlgx5cW"
 
@@ -9,48 +9,77 @@ MODEL_URL = "https://detect.roboflow.com/car_dent_scratch_detection-1-mczqd/1"
 
 
 st.set_page_config(
-    page_title="Smart Vehicle Inspector",
+    page_title="AI Vehicle Damage Inspector",
     page_icon="🚗",
     layout="wide"
 )
 
+st.title("🚗 AI Vehicle Damage Inspector")
+st.write("Upload a vehicle image to detect damages and estimate repair cost.")
 
-st.title("🚗 Smart Vehicle Inspector")
-st.write("Upload a damaged vehicle image to detect dents and scratches.")
+
+damage_costs = {
+
+    # DENTS
+    "bonnet-dent": 4500,
+    "boot-dent": 4000,
+    "doorouter-dent": 5000,
+    "fender-dent": 3500,
+    "front-bumper-dent": 6000,
+    "rear-bumper-dent": 5500,
+    "quarterpanel-dent": 6500,
+    "roof-dent": 7000,
+    "pillar-dent": 4500,
+    "RunningBoard-Dent": 3000,
+    "medium-Bodypanel-Dent": 5000,
+    "Major-Rear-Bumper-Dent": 12000,
+
+    # GLASS DAMAGES
+    "Front-Windscreen-Damage": 15000,
+    "Rear-windscreen-Damage": 12000,
+
+    # LIGHT DAMAGES
+    "Headlight-Damage": 8000,
+    "Signlight-Damage": 3000,
+    "Taillight-Damage": 5000,
+    "Sidemirror-Damage": 3500,
+
+    # DEFAULT
+    "scratch": 2500
+}
+
+
+def get_severity(confidence):
+
+    if confidence > 0.80:
+        return "High"
+
+    elif confidence > 0.55:
+        return "Medium"
+
+    else:
+        return "Low"
 
 
 uploaded_file = st.file_uploader(
-    "Upload Car Image",
+    "Upload Vehicle Image",
     type=["jpg", "jpeg", "png"]
 )
-
-
-def estimate_cost(predictions):
-    total_cost = 0
-
-    for p in predictions:
-        damage_class = p["class"]
-
-        if damage_class == "dent":
-            total_cost += 3000
-
-        elif damage_class == "scratch":
-            total_cost += 1500
-
-        else:
-            total_cost += 2000
-
-    return total_cost
 
 
 if uploaded_file is not None:
 
     image = Image.open(uploaded_file).convert("RGB")
 
-    st.image(image, caption="Uploaded Image", use_container_width=True)
+    st.image(
+        image,
+        caption="Uploaded Image",
+        use_container_width=True
+    )
 
     try:
-        # Send image to Roboflow
+
+       
         response = requests.post(
             f"{MODEL_URL}?api_key={API_KEY}",
             files={"file": uploaded_file.getvalue()}
@@ -60,10 +89,20 @@ if uploaded_file is not None:
 
         predictions = result.get("predictions", [])
 
-        # Draw detections
         draw = ImageDraw.Draw(image)
 
+        total_cost = 0
+
+        table_data = []
+
+       
         for p in predictions:
+
+            confidence = p["confidence"]
+
+            # FILTER LOW CONFIDENCE
+            if confidence < 0.40:
+                continue
 
             x = p["x"]
             y = p["y"]
@@ -76,16 +115,25 @@ if uploaded_file is not None:
             y2 = y + height / 2
 
             damage_class = p["class"]
-            confidence = p["confidence"]
 
-            # Draw rectangle
+            # GET COST
+            estimated_cost = damage_costs.get(
+                damage_class,
+                4000
+            )
+
+            total_cost += estimated_cost
+
+            severity = get_severity(confidence)
+
+            # DRAW BOX
             draw.rectangle(
                 [x1, y1, x2, y2],
                 outline="red",
                 width=4
             )
 
-            # Draw label
+            # LABEL
             label = f"{damage_class} ({confidence:.2f})"
 
             draw.text(
@@ -94,33 +142,60 @@ if uploaded_file is not None:
                 fill="red"
             )
 
-        # Show result image
+            # STORE TABLE DATA
+            table_data.append({
+                "Damage Type": damage_class,
+                "Confidence": f"{confidence:.2f}",
+                "Severity": severity,
+                "Estimated Cost (₹)": estimated_cost
+            })
+
+        
         st.image(
             image,
-            caption="Detected Damage",
+            caption="Detected Damages",
             use_container_width=True
         )
 
-        # Show details
-        st.subheader("Detection Results")
+        
+        st.subheader("📋 Damage Report")
 
-        if len(predictions) == 0:
-            st.warning("No damage detected.")
+        if len(table_data) == 0:
+
+            st.warning("No major damage detected.")
 
         else:
-            for i, p in enumerate(predictions, start=1):
 
-                st.write(
-                    f"{i}. {p['class']} "
-                    f"(Confidence: {p['confidence']:.2f})"
-                )
+            df = pd.DataFrame(table_data)
 
-            # Cost estimation
-            total_cost = estimate_cost(predictions)
-
-            st.success(
-                f"Estimated Repair Cost: ₹{total_cost}"
+            st.dataframe(
+                df,
+                use_container_width=True
             )
 
+            st.success(
+                f"💰 Total Estimated Repair Cost: ₹{total_cost}"
+            )
+
+            
+            if total_cost > 25000:
+
+                st.error(
+                    "⚠ Recommended: Insurance Claim Suggested"
+                )
+
+            elif total_cost > 10000:
+
+                st.warning(
+                    "⚠ Moderate Damage Detected"
+                )
+
+            else:
+
+                st.info(
+                    "✅ Minor Damage Detected"
+                )
+
     except Exception as e:
+
         st.error(f"Error: {e}")
